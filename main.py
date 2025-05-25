@@ -7,6 +7,30 @@ app = Flask(__name__)
 DISCORD_WEBHOOK = os.environ.get("DISCORD_WEBHOOK")
 AUTH_TOKEN = os.environ.get("AUTH_TOKEN")
 
+def build_discord_message(event):
+    name = event.get("name")
+    data = event.get("data", {})
+
+    if name == "serveradmintools_player_joined":
+        return f"> 👤 **{data.get('player')}** joined the game."
+
+    elif name == "serveradmintools_player_killed":
+        player = data.get("player")
+        instigator = data.get("instigator")
+
+        if instigator == "AI":
+            return f"> 🤖 **{player}** was killed by AI."
+        elif instigator and instigator != player:
+            return f"> 💥 **{player}** was killed by **{instigator}**."
+        else:
+            return f"> ☠️ **{player}** died."
+
+    elif name == "serveradmintools_game_started":
+        return "> 🚀 Game has started!"
+
+    # Fallback for unhandled events
+    return f"📢 Unhandled event: `{name}`"
+
 @app.route("/", methods=["POST"])
 def handle_event():
     if not request.is_json:
@@ -16,21 +40,11 @@ def handle_event():
     if body.get("token") != AUTH_TOKEN:
         return "Unauthorized", 403
 
-    for event in body.get("events", []):
-        name = event["name"]
-        data = event.get("data", {})
-        msg = ""
-
-        if name == "serveradmintools_player_joined":
-            msg = f"> 👤 Player Joined: **{data.get('player')}**"
-        elif name == "serveradmintools_player_killed":
-            msg = f"> 💀 Player Killed: **{data.get('player')}**"
-        elif name == "serveradmintools_game_started":
-            msg = "> ➡️ Game Started!"
-        else:
-            msg = f"📢 Event: `{name}`"
-
-        requests.post(DISCORD_WEBHOOK, json={"content": msg})
+    events = body.get("events", [])
+    for event in events:
+        msg = build_discord_message(event)
+        if msg:
+            requests.post(DISCORD_WEBHOOK, json={"content": msg})
 
     return "OK", 200
 
