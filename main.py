@@ -28,6 +28,21 @@ def build_discord_message(event):
     elif name == "serveradmintools_game_started":
         return "> 🚀 Game has started!"
 
+    elif name == "serveradmintools_admin_action":
+        admin = data.get("admin")
+        target = data.get("target")
+        action = data.get("action", "").lower()
+        reason = data.get("reason", "No reason provided")
+
+        if action == "kick":
+            return f"> 👢 Admin **{admin}** kicked **{target}**.\n> 📋 Reason: {reason}"
+        elif action == "ban":
+            return f"> ⛔ Admin **{admin}** banned **{target}**.\n> 📋 Reason: {reason}"
+        elif action == "game_master_login":
+            return f"> 🎮 Game Master **{target}** has logged in!"
+        else:
+            return f"> 🛡️ Admin **{admin}** performed **{action}** on **{target}**.\n> 📋 Reason: {reason}"
+
     # Fallback for unhandled events
     return f"📢 Unhandled event: `{name}`"
 
